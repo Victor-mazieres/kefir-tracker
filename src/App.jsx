@@ -4,6 +4,7 @@ import { Layout } from './components/Layout';
 import Home from './pages/Home';
 import NewBatch from './pages/NewBatch';
 import BatchDetails from './pages/BatchDetails';
+import Bottling from './pages/Bottling';
 import Recipes from './pages/Recipes';
 import Settings from './pages/Settings';
 
@@ -15,6 +16,7 @@ function App() {
           <Route index element={<Home />} />
           <Route path="new-batch" element={<NewBatch />} />
           <Route path="batch/:id" element={<BatchDetails />} />
+          <Route path="batch/:id/bottling" element={<Bottling />} />
           <Route path="recipes" element={<Recipes />} />
           <Route path="settings" element={<Settings />} />
         </Route>

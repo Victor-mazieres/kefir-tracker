@@ -17,6 +17,7 @@ export default function NewBatch() {
         f1Start: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
         waterL: 2,
         sugarG: 60,
+        sugarUnit: 'g',
         grainsG: 50,
         f1Hours: 48,
         ingredients: 'Citron, figue'
@@ -75,6 +76,7 @@ export default function NewBatch() {
                 f1Start: new Date(formData.f1Start).toISOString(),
                 waterL: Number(formData.waterL),
                 sugarG: Number(formData.sugarG),
+                sugarUnit: formData.sugarUnit,
                 grainsG: Number(formData.grainsG),
                 f1Hours: Number(formData.f1Hours),
                 rating: 0,
@@ -156,14 +158,30 @@ export default function NewBatch() {
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
-                            <Input
-                                label="Sucre (g)"
-                                type="number"
-                                name="sugarG"
-                                value={formData.sugarG}
-                                onChange={handleChange}
-                                required
-                            />
+                            <div className="space-y-1">
+                                <label className="block text-sm font-medium text-text-main mb-1">Sucre</label>
+                                <div className="flex gap-2">
+                                    <Input
+                                        type="number"
+                                        name="sugarG"
+                                        value={formData.sugarG}
+                                        onChange={handleChange}
+                                        required
+                                        className="flex-1"
+                                        placeholder="Qté"
+                                    />
+                                    <select
+                                        name="sugarUnit"
+                                        value={formData.sugarUnit}
+                                        onChange={handleChange}
+                                        className="h-12 rounded-md border border-secondary bg-surface px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                                    >
+                                        <option value="g">g</option>
+                                        <option value="c.à.s">c.à.s</option>
+                                        <option value="c.à.c">c.à.c</option>
+                                    </select>
+                                </div>
+                            </div>
                             <Input
                                 label="Grains (g)"
                                 type="number"

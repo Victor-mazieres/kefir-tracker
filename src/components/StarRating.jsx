@@ -27,8 +27,8 @@ export const StarRating = ({ rating, onChange, readOnly = false }) => {
                         className={cn(
                             "w-8 h-8 transition-colors",
                             (hoverRating || rating) >= star
-                                ? "fill-yellow-400 text-yellow-400"
-                                : "text-gray-300"
+                                ? "fill-accent text-accent"
+                                : "text-secondary"
                         )}
                     />
                 </button>

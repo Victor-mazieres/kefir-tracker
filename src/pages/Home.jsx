@@ -54,7 +54,7 @@ export default function Home() {
                     variant="secondary"
                     size="icon"
                     onClick={() => setSortBy(prev => prev === 'date' ? 'rating' : 'date')}
-                    className={sortBy === 'rating' ? "bg-indigo-50 border-indigo-200 text-indigo-600" : ""}
+                    className={sortBy === 'rating' ? "bg-secondary/20 border-secondary text-primary" : ""}
                 >
                     <ArrowUpDown className="h-4 w-4" />
                 </Button>
@@ -72,7 +72,7 @@ export default function Home() {
 
             {loading ? (
                 <div className="flex justify-center py-8">
-                    <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
                 </div>
             ) : filteredBatches.length === 0 ? (
                 <div className="text-center py-10 text-gray-500 bg-white rounded-xl border border-dashed border-gray-300">

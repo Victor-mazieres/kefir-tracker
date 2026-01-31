@@ -3,10 +3,10 @@ import { cn } from '../../lib/utils';
 
 export const Button = React.forwardRef(({ className, variant = 'primary', size = 'default', ...props }, ref) => {
     const variants = {
-        primary: 'bg-indigo-600 text-white hover:bg-indigo-700 focus-visible:ring-indigo-600',
-        secondary: 'bg-white text-gray-900 border border-gray-300 hover:bg-gray-50 focus-visible:ring-gray-900',
-        danger: 'bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-600',
-        ghost: 'hover:bg-gray-100 text-gray-700',
+        primary: 'bg-primary text-white hover:bg-primary-light focus-visible:ring-primary shadow-sm hover:shadow-md',
+        secondary: 'bg-surface text-text-main border border-secondary hover:bg-background focus-visible:ring-text-main shadow-sm',
+        danger: 'bg-accent text-white hover:bg-accent-hover focus-visible:ring-accent shadow-sm',
+        ghost: 'hover:bg-secondary/10 text-text-main hover:text-primary',
     };
 
     const sizes = {

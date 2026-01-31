@@ -5,7 +5,7 @@ import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { StarRating } from '../components/StarRating';
 import { ConfirmDialog } from '../components/ConfirmDialog';
-import { ArrowLeft, Clock, Calendar, CheckCircle, Trash2, Save } from 'lucide-react';
+import { ArrowLeft, Clock, Calendar, CheckCircle, Trash2, Save, PlusCircle } from 'lucide-react';
 import { format, addHours, isPast } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -38,8 +38,8 @@ export default function BatchDetails() {
         fetchData();
     }, [id, get, navigate]);
 
-    const handleRatingChange = async (newRating) => {
-        const updated = await update(id, { rating: newRating });
+    const handleRatingChange = async (key, value) => {
+        const updated = await update(id, { [key]: value });
         setBatch(updated);
     };
 
@@ -79,9 +79,9 @@ export default function BatchDetails() {
             </div>
 
             {/* Timeline Card */}
-            <Card className="bg-gradient-to-br from-indigo-50 to-white">
+            <Card className="bg-gradient-to-br from-background to-surface">
                 <CardHeader className="pb-2">
-                    <CardTitle className="text-indigo-900 flex items-center gap-2">
+                    <CardTitle className="text-primary flex items-center gap-2">
                         <Clock className="w-5 h-5" /> Timeline F1
                     </CardTitle>
                 </CardHeader>
@@ -112,6 +112,41 @@ export default function BatchDetails() {
                         </Button>
                     )}
                 </CardContent>
+
+            </Card>
+
+            {/* F2 / Bottling Card */}
+            <Card className="bg-gradient-to-br from-purple-50 to-white border-purple-100">
+                <CardHeader className="pb-2">
+                    <CardTitle className="text-purple-900 flex items-center gap-2">
+                        <div className="flex justify-between w-full items-center">
+                            <span className="flex items-center gap-2">🍾 Mise en bouteille (F2)</span>
+                            {batch.f2Start && <span className="text-xs font-normal text-purple-600 bg-purple-100 px-2 py-1 rounded-full">{format(new Date(batch.f2Start), "d MMM", { locale: fr })}</span>}
+                        </div>
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {batch.bottles ? (
+                        <div className="space-y-3">
+                            <div className="grid grid-cols-1 gap-2">
+                                {batch.bottles.map((bottle, idx) => (
+                                    <div key={idx} className="bg-white p-3 rounded border border-purple-100 text-sm flex justify-between items-center shadow-sm">
+                                        <span className="font-bold text-purple-700">Bouteille #{bottle.id}</span>
+                                        <span className="text-gray-600 italic">{bottle.ingredients || "Nature"}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="text-center py-2">
+                            <p className="text-sm text-gray-500 mb-4">La première fermentation est terminée ? Passez à la mise en bouteille !</p>
+                            <Button onClick={() => navigate(`/batch/${id}/bottling`)} className="w-full bg-purple-600 hover:bg-purple-700 text-white">
+                                <PlusCircle className="w-4 h-4 mr-2" />
+                                Start F2 & Add Ingredients
+                            </Button>
+                        </div>
+                    )}
+                </CardContent>
             </Card>
 
             {/* Recipe Info */}
@@ -126,7 +161,7 @@ export default function BatchDetails() {
                             <div className="text-xs text-blue-400">Eau</div>
                         </div>
                         <div className="bg-pink-50 p-2 rounded">
-                            <div className="text-pink-500 font-bold">{batch.sugarG} g</div>
+                            <div className="text-pink-500 font-bold">{batch.sugarG} {batch.sugarUnit || 'g'}</div>
                             <div className="text-xs text-pink-400">Sucre</div>
                         </div>
                         <div className="bg-amber-50 p-2 rounded">
@@ -148,8 +183,67 @@ export default function BatchDetails() {
                     <CardTitle className="text-gray-800 text-base">Résultat</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div className="flex justify-center py-2">
-                        <StarRating rating={batch.rating} onChange={handleRatingChange} />
+                    <div className="space-y-6">
+                        <div className="text-center">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Note Globale</label>
+                            <div className="flex justify-center">
+                                <StarRating rating={batch.rating} onChange={(val) => handleRatingChange('rating', val)} />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-4 rounded-lg">
+                            <div>
+                                <label className="flex justify-between text-sm font-medium text-gray-700 mb-1">
+                                    <span>Goût</span>
+                                    <span className="text-primary font-bold">{batch.ratingTaste || 5}/10</span>
+                                </label>
+                                <input
+                                    type="range" min="1" max="10"
+                                    value={batch.ratingTaste || 5}
+                                    onChange={(e) => handleRatingChange('ratingTaste', Number(e.target.value))}
+                                    className="w-full accent-primary h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="flex justify-between text-sm font-medium text-gray-700 mb-1">
+                                    <span>Bulles</span>
+                                    <span className="text-purple-600 font-bold">{batch.ratingFizz || 5}/10</span>
+                                </label>
+                                <input
+                                    type="range" min="1" max="10"
+                                    value={batch.ratingFizz || 5}
+                                    onChange={(e) => handleRatingChange('ratingFizz', Number(e.target.value))}
+                                    className="w-full accent-purple-600 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="flex justify-between text-sm font-medium text-gray-700 mb-1">
+                                    <span>Sucre ressenti</span>
+                                    <span className="text-pink-500 font-bold">{batch.ratingSugar || 5}/10</span>
+                                </label>
+                                <input
+                                    type="range" min="1" max="10"
+                                    value={batch.ratingSugar || 5}
+                                    onChange={(e) => handleRatingChange('ratingSugar', Number(e.target.value))}
+                                    className="w-full accent-pink-500 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="flex justify-between text-sm font-medium text-gray-700 mb-1">
+                                    <span>Acidité</span>
+                                    <span className="text-amber-500 font-bold">{batch.ratingAcidity || 5}/10</span>
+                                </label>
+                                <input
+                                    type="range" min="1" max="10"
+                                    value={batch.ratingAcidity || 5}
+                                    onChange={(e) => handleRatingChange('ratingAcidity', Number(e.target.value))}
+                                    className="w-full accent-amber-500 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                                />
+                            </div>
+                        </div>
                     </div>
 
                     <div>
@@ -175,6 +269,6 @@ export default function BatchDetails() {
                 title="Supprimer le lot ?"
                 message="Cette action est irréversible."
             />
-        </div>
+        </div >
     );
 }
