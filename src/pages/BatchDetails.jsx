@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Bottle } from '../components/illustrations/Bottle';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useBatches } from '../hooks/useDb';
 import { Button } from '../components/ui/Button';
@@ -115,6 +116,8 @@ export default function BatchDetails() {
 
             </Card>
 
+
+
             {/* F2 / Bottling Card */}
             <Card className="bg-gradient-to-br from-purple-50 to-white border-purple-100">
                 <CardHeader className="pb-2">
@@ -127,15 +130,19 @@ export default function BatchDetails() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                     {batch.bottles ? (
-                        <div className="space-y-3">
-                            <div className="grid grid-cols-1 gap-2">
-                                {batch.bottles.map((bottle, idx) => (
-                                    <div key={idx} className="bg-white p-3 rounded border border-purple-100 text-sm flex justify-between items-center shadow-sm">
-                                        <span className="font-bold text-purple-700">Bouteille #{bottle.id}</span>
-                                        <span className="text-gray-600 italic">{bottle.ingredients || "Nature"}</span>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-12 gap-x-8 pt-6 justify-items-center">
+                            {batch.bottles.map((bottle, idx) => (
+                                <Bottle key={idx} index={idx} className="scale-90">
+                                    <div className="w-full flex flex-col gap-1 items-center">
+                                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest border-b border-gray-200 pb-0.5 w-full text-center">
+                                            Bouteille {bottle.id}
+                                        </span>
+                                        <p className="font-handwriting text-gray-800 text-sm leading-tight text-center break-words w-full" style={{ fontFamily: '"Comic Sans MS", "Chalkboard SE", sans-serif' }}>
+                                            {bottle.ingredients || "Nature"}
+                                        </p>
                                     </div>
-                                ))}
-                            </div>
+                                </Bottle>
+                            ))}
                         </div>
                     ) : (
                         <div className="text-center py-2">

@@ -64,29 +64,52 @@ export default function Bottling() {
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                    <div>
-                        <label className="block text-sm font-medium text-text-main mb-2">Nombre de bouteilles</label>
-                        <div className="flex items-center gap-4">
-                            <Button variant="ghost" size="icon" onClick={() => handleCountChange(bottleCount - 1)}>
-                                <Minus className="w-4 h-4" />
+                    {/* Counter Section */}
+                    <div className="flex flex-col items-center justify-center p-6 bg-primary/5 rounded-2xl border border-primary/10">
+                        <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-primary shadow-sm mb-3">
+                            <Wine className="w-8 h-8" />
+                        </div>
+                        <label className="block text-sm font-medium text-text-main mb-3">Nombre de bouteilles</label>
+                        <div className="flex items-center gap-6">
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => handleCountChange(bottleCount - 1)}
+                                className="h-10 w-10 rounded-full border-primary/20 hover:bg-primary/5 hover:text-primary"
+                            >
+                                <Minus className="w-5 h-5" />
                             </Button>
-                            <span className="text-xl font-bold w-8 text-center">{bottleCount}</span>
-                            <Button variant="ghost" size="icon" onClick={() => handleCountChange(bottleCount + 1)}>
-                                <Plus className="w-4 h-4" />
+                            <span className="text-3xl font-bold w-12 text-center text-primary">{bottleCount}</span>
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => handleCountChange(bottleCount + 1)}
+                                className="h-10 w-10 rounded-full border-primary/20 hover:bg-primary/5 hover:text-primary"
+                            >
+                                <Plus className="w-5 h-5" />
                             </Button>
                         </div>
                     </div>
 
+                    {/* Bottles List */}
                     <div className="space-y-4">
                         {bottles.map((bottle, index) => (
-                            <div key={bottle.id} className="p-4 bg-background rounded-lg border border-secondary/20">
-                                <h4 className="text-sm font-medium text-primary mb-2">Bouteille #{bottle.id}</h4>
-                                <Input
-                                    label="Ingrédients / Arômes ajoutés"
-                                    placeholder="Ex: Gingembre, Franboise..."
-                                    value={bottle.ingredients}
-                                    onChange={(e) => handleIngredientChange(index, e.target.value)}
-                                />
+                            <div
+                                key={bottle.id}
+                                className="flex gap-4 p-4 bg-white rounded-xl border border-gray-100 shadow-sm transition-all hover:shadow-md hover:border-primary/20 items-start"
+                            >
+                                <div className="flex-shrink-0 w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600 mt-1">
+                                    <Wine className="w-6 h-6" />
+                                </div>
+                                <div className="flex-1 space-y-2">
+                                    <h4 className="text-sm font-bold text-gray-900">Bouteille #{bottle.id}</h4>
+                                    <Input
+                                        placeholder="Ingrédients (ex: Gingembre...)"
+                                        value={bottle.ingredients}
+                                        onChange={(e) => handleIngredientChange(index, e.target.value)}
+                                        className="bg-gray-50/50"
+                                    />
+                                </div>
                             </div>
                         ))}
                     </div>
