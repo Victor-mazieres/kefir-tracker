@@ -1,0 +1,180 @@
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useBatches } from '../hooks/useDb';
+import { Button } from '../components/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { StarRating } from '../components/StarRating';
+import { ConfirmDialog } from '../components/ConfirmDialog';
+import { ArrowLeft, Clock, Calendar, CheckCircle, Trash2, Save } from 'lucide-react';
+import { format, addHours, isPast } from 'date-fns';
+import { fr } from 'date-fns/locale';
+
+export default function BatchDetails() {
+    const { id } = useParams();
+    const navigate = useNavigate();
+    const { get, update, remove } = useBatches();
+    const [batch, setBatch] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [notes, setNotes] = useState('');
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const data = await get(id);
+                if (data) {
+                    setBatch(data);
+                    setNotes(data.notes || '');
+                } else {
+                    navigate('/');
+                }
+            } catch (e) {
+                console.error(e);
+                navigate('/');
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+    }, [id, get, navigate]);
+
+    const handleRatingChange = async (newRating) => {
+        const updated = await update(id, { rating: newRating });
+        setBatch(updated);
+    };
+
+    const handleNotesSave = async () => {
+        const updated = await update(id, { notes });
+        setBatch(updated);
+        // Optional: show toast
+    };
+
+    const handleF1Complete = async () => {
+        const updated = await update(id, { f1DoneAt: new Date().toISOString() });
+        setBatch(updated);
+    };
+
+    const handleDelete = async () => {
+        await remove(id);
+        navigate('/', { replace: true });
+    };
+
+    if (loading) return <div className="p-8 text-center">Chargement...</div>;
+    if (!batch) return null;
+
+    const f1StartDate = new Date(batch.f1Start);
+    const f1EndDate = addHours(f1StartDate, batch.f1Hours);
+    const isF1Overdue = isPast(f1EndDate) && !batch.f1DoneAt;
+
+    return (
+        <div className="space-y-6">
+            <div className="flex items-center justify-between">
+                <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+                    <ArrowLeft className="w-5 h-5" />
+                </Button>
+                <h2 className="text-xl font-bold text-gray-900 truncate flex-1 ml-2">{batch.title}</h2>
+                <Button variant="ghost" size="icon" className="text-red-500" onClick={() => setShowDeleteConfirm(true)}>
+                    <Trash2 className="w-5 h-5" />
+                </Button>
+            </div>
+
+            {/* Timeline Card */}
+            <Card className="bg-gradient-to-br from-indigo-50 to-white">
+                <CardHeader className="pb-2">
+                    <CardTitle className="text-indigo-900 flex items-center gap-2">
+                        <Clock className="w-5 h-5" /> Timeline F1
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="flex justify-between items-center text-sm">
+                        <span className="text-gray-500">Début</span>
+                        <span className="font-medium">{format(f1StartDate, "d MMM HH:mm", { locale: fr })}</span>
+                    </div>
+                    <div className="relative pl-4 border-l-2 border-indigo-200 py-2">
+                        <div className="text-xs text-gray-500 mb-1">{batch.f1Hours} heures</div>
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-gray-500">Fin prévue</span>
+                            <span className={`font-medium ${isF1Overdue ? 'text-orange-600 font-bold' : ''}`}>
+                                {format(f1EndDate, "d MMM HH:mm", { locale: fr })}
+                            </span>
+                        </div>
+                    </div>
+
+                    {batch.f1DoneAt ? (
+                        <div className="bg-green-100 text-green-800 px-3 py-2 rounded-lg flex items-center gap-2 text-sm font-medium">
+                            <CheckCircle className="w-4 h-4" />
+                            F1 terminée le {format(new Date(batch.f1DoneAt), "d MMM HH:mm", { locale: fr })}
+                        </div>
+                    ) : (
+                        <Button onClick={handleF1Complete} className="w-full gap-2">
+                            <CheckCircle className="w-4 h-4" />
+                            Marquer F1 terminée
+                        </Button>
+                    )}
+                </CardContent>
+            </Card>
+
+            {/* Recipe Info */}
+            <Card>
+                <CardHeader className="pb-2">
+                    <CardTitle className="text-gray-800 text-base">Recette</CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm space-y-2">
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                        <div className="bg-blue-50 p-2 rounded">
+                            <div className="text-blue-500 font-bold">{batch.waterL} L</div>
+                            <div className="text-xs text-blue-400">Eau</div>
+                        </div>
+                        <div className="bg-pink-50 p-2 rounded">
+                            <div className="text-pink-500 font-bold">{batch.sugarG} g</div>
+                            <div className="text-xs text-pink-400">Sucre</div>
+                        </div>
+                        <div className="bg-amber-50 p-2 rounded">
+                            <div className="text-amber-600 font-bold">{batch.grainsG} g</div>
+                            <div className="text-xs text-amber-500">Grains</div>
+                        </div>
+                    </div>
+                    {batch.ingredients && (
+                        <div className="mt-3 p-3 bg-gray-50 rounded text-gray-700 italic border border-gray-100">
+                            {batch.ingredients}
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
+            {/* Rating & Notes */}
+            <Card>
+                <CardHeader className="pb-2">
+                    <CardTitle className="text-gray-800 text-base">Résultat</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="flex justify-center py-2">
+                        <StarRating rating={batch.rating} onChange={handleRatingChange} />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                        <textarea
+                            className="w-full min-h-[100px] p-3 rounded-md border border-gray-300 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                            placeholder="Comment était le goût ? Pétillant ?..."
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
+                            onBlur={handleNotesSave}
+                        ></textarea>
+                        <div className="flex justify-end mt-1">
+                            <span className="text-xs text-gray-400 italic">Sauvegardé auto. au départ du champ</span>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <ConfirmDialog
+                isOpen={showDeleteConfirm}
+                onClose={() => setShowDeleteConfirm(false)}
+                onConfirm={handleDelete}
+                title="Supprimer le lot ?"
+                message="Cette action est irréversible."
+            />
+        </div>
+    );
+}
