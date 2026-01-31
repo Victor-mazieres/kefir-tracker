@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/Card';
 import { Button } from './ui/Button';
-import { Edit2, Trash2 } from 'lucide-react';
+import { Edit2, Trash2, Droplets } from 'lucide-react';
 
 export const RecipeCard = ({ recipe, onEdit, onDelete, onUse }) => {
     return (

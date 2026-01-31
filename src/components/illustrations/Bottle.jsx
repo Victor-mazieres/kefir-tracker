@@ -1,9 +1,9 @@
 import React from 'react';
 import { cn } from '../../lib/utils';
 
-export function Bottle({ children, index, className }) {
+export function Bottle({ children, index, className, noRotation = false }) {
     // Generate a slightly different rotation/wobble for each bottle to make it feel organic
-    const rotation = (index % 3 - 1) * 2; // -2, 0, 2 degrees
+    const rotation = noRotation ? 0 : (index % 3 - 1) * 2; // -2, 0, 2 degrees
 
     return (
         <div className={cn("relative flex flex-col items-center group", className)}>
