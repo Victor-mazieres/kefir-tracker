@@ -7,6 +7,8 @@ import { Card, CardContent } from '../components/ui/Card';
 import { ArrowLeft, ChefHat } from 'lucide-react';
 import { format } from 'date-fns';
 
+import { DateTimePicker } from '../components/DateTimePicker';
+
 export default function NewBatch() {
     const navigate = useNavigate();
     const { add: addBatch } = useBatches();
@@ -20,6 +22,8 @@ export default function NewBatch() {
         sugarUnit: 'g',
         grainsG: 50,
         f1Hours: 48,
+        temperature: 20,
+        isAmbientTemp: false,
         ingredients: 'Citron, figue'
     });
 
@@ -37,6 +41,8 @@ export default function NewBatch() {
                     sugarG: recipe.sugarG,
                     grainsG: recipe.grainsG,
                     f1Hours: recipe.f1Hours,
+                    temperature: recipe.temperature || prev.temperature,
+                    isAmbientTemp: recipe.isAmbientTemp || false,
                     ingredients: recipe.ingredients || prev.ingredients
                 }));
             }
@@ -44,10 +50,10 @@ export default function NewBatch() {
     }, [state, recipes]);
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
+        const { name, value, type, checked } = e.target;
         setFormData(prev => ({
             ...prev,
-            [name]: value
+            [name]: type === 'checkbox' ? checked : value
         }));
     };
 
@@ -63,6 +69,8 @@ export default function NewBatch() {
                 sugarG: recipe.sugarG,
                 grainsG: recipe.grainsG,
                 f1Hours: recipe.f1Hours,
+                temperature: recipe.temperature || prev.temperature,
+                isAmbientTemp: recipe.isAmbientTemp || false,
                 ingredients: recipe.ingredients || prev.ingredients
             }));
         }
@@ -79,6 +87,8 @@ export default function NewBatch() {
                 sugarUnit: formData.sugarUnit,
                 grainsG: Number(formData.grainsG),
                 f1Hours: Number(formData.f1Hours),
+                temperature: Number(formData.temperature),
+                isAmbientTemp: formData.isAmbientTemp,
                 rating: 0,
                 notes: '',
                 f1DoneAt: null
@@ -128,15 +138,14 @@ export default function NewBatch() {
                             required
                         />
 
-                        <Input
+                        <DateTimePicker
                             label="Début F1"
-                            type="datetime-local"
                             name="f1Start"
                             value={formData.f1Start}
                             onChange={handleChange}
-                            required
                         />
 
+                        {/* Row 1: Water & Time */}
                         <div className="grid grid-cols-2 gap-4">
                             <Input
                                 label="Eau (L)"
@@ -157,6 +166,7 @@ export default function NewBatch() {
                             />
                         </div>
 
+                        {/* Row 2: Sugar & Grains */}
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1">
                                 <label className="block text-sm font-medium text-text-main mb-1">Sucre</label>
@@ -192,6 +202,31 @@ export default function NewBatch() {
                             />
                         </div>
 
+                        {/* Row 3: Temperature */}
+                        <div className="grid grid-cols-2 gap-4 items-end">
+                            <Input
+                                label="Température (°C)"
+                                type="number"
+                                step="0.5"
+                                name="temperature"
+                                value={formData.temperature}
+                                onChange={handleChange}
+                            />
+                            <div className="flex items-center gap-2 h-12 pb-2">
+                                <input
+                                    type="checkbox"
+                                    id="isAmbientTemp"
+                                    name="isAmbientTemp"
+                                    checked={formData.isAmbientTemp}
+                                    onChange={handleChange}
+                                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                />
+                                <label htmlFor="isAmbientTemp" className="text-sm font-medium text-gray-700">
+                                    Temp. ambiante
+                                </label>
+                            </div>
+                        </div>
+
                         <Input
                             label="Ingrédients / Arômes"
                             name="ingredients"
@@ -208,6 +243,6 @@ export default function NewBatch() {
                     </form>
                 </CardContent>
             </Card>
-        </div>
+        </div >
     );
 }

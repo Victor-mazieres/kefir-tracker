@@ -14,7 +14,8 @@ export const Layout = () => {
         <div className="min-h-screen bg-background flex flex-col max-w-md mx-auto shadow-2xl overflow-hidden relative font-sans">
             <header className="bg-surface border-b border-secondary/20 p-4 sticky top-0 z-10 shadow-sm">
                 <h1 className="text-xl font-bold text-primary flex items-center gap-2">
-                    <span className="text-2xl">🌿</span> Kéfir Tracker
+                    <img src="/Grains&Bulles.svg" alt="Logo" className="w-8 h-8" />
+                    Grains & Bulles
                 </h1>
             </header>
 

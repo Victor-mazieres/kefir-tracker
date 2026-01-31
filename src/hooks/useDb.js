@@ -22,27 +22,27 @@ export const useBatches = () => {
         fetchBatches();
     }, [fetchBatches]);
 
-    const add = async (data) => {
+    const add = useCallback(async (data) => {
         const newBatch = await db.addBatch(data);
         await fetchBatches();
         return newBatch;
-    };
+    }, [fetchBatches]);
 
-    const update = async (id, patch) => {
+    const update = useCallback(async (id, patch) => {
         const updated = await db.updateBatch(id, patch);
         await fetchBatches();
         return updated;
-    };
+    }, [fetchBatches]);
 
-    const remove = async (id) => {
+    const remove = useCallback(async (id) => {
         await db.deleteBatch(id);
         await fetchBatches();
-    };
+    }, [fetchBatches]);
 
-    const get = async (id) => {
+    const get = useCallback(async (id) => {
         // This is for fetching a single batch without loading all
         return await db.getBatch(id);
-    }
+    }, []);
 
     return { batches, loading, error, add, update, remove, get, refresh: fetchBatches };
 };
@@ -68,22 +68,22 @@ export const useRecipes = () => {
         fetchRecipes();
     }, [fetchRecipes]);
 
-    const add = async (data) => {
+    const add = useCallback(async (data) => {
         const newRecipe = await db.addRecipe(data);
         await fetchRecipes();
         return newRecipe;
-    };
+    }, [fetchRecipes]);
 
-    const update = async (id, patch) => {
+    const update = useCallback(async (id, patch) => {
         const updated = await db.updateRecipe(id, patch);
         await fetchRecipes();
         return updated;
-    };
+    }, [fetchRecipes]);
 
-    const remove = async (id) => {
+    const remove = useCallback(async (id) => {
         await db.deleteRecipe(id);
         await fetchRecipes();
-    };
+    }, [fetchRecipes]);
 
     return { recipes, loading, error, add, update, remove, refresh: fetchRecipes };
 };

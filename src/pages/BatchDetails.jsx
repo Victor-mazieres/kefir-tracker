@@ -155,7 +155,7 @@ export default function BatchDetails() {
                     <CardTitle className="text-gray-800 text-base">Recette</CardTitle>
                 </CardHeader>
                 <CardContent className="text-sm space-y-2">
-                    <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className="grid grid-cols-4 gap-2 text-center">
                         <div className="bg-blue-50 p-2 rounded">
                             <div className="text-blue-500 font-bold">{batch.waterL} L</div>
                             <div className="text-xs text-blue-400">Eau</div>
@@ -168,6 +168,12 @@ export default function BatchDetails() {
                             <div className="text-amber-600 font-bold">{batch.grainsG} g</div>
                             <div className="text-xs text-amber-500">Grains</div>
                         </div>
+                        {batch.temperature && (
+                            <div className="bg-red-50 p-2 rounded">
+                                <div className="text-red-500 font-bold">{batch.temperature}°</div>
+                                <div className="text-xs text-red-400">{batch.isAmbientTemp ? 'Ambiante' : 'Temp.'}</div>
+                            </div>
+                        )}
                     </div>
                     {batch.ingredients && (
                         <div className="mt-3 p-3 bg-gray-50 rounded text-gray-700 italic border border-gray-100">
@@ -255,8 +261,11 @@ export default function BatchDetails() {
                             onChange={(e) => setNotes(e.target.value)}
                             onBlur={handleNotesSave}
                         ></textarea>
-                        <div className="flex justify-end mt-1">
-                            <span className="text-xs text-gray-400 italic">Sauvegardé auto. au départ du champ</span>
+                        <div className="flex justify-between mt-2">
+                            <span className="text-xs text-gray-400 italic self-center">Sauvegardé auto. au départ du champ</span>
+                            <Button onClick={handleNotesSave} size="sm" className="gap-2">
+                                <Save className="w-4 h-4" /> Sauvegarder
+                            </Button>
                         </div>
                     </div>
                 </CardContent>
