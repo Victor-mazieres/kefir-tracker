@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import { StarRating } from '../components/StarRating';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Toast } from '../components/ui/Toast';
-import { ArrowLeft, Clock, Calendar, CheckCircle, Trash2, Save, PlusCircle, BookHeart } from 'lucide-react';
+import { ArrowLeft, Clock, Calendar, CheckCircle, Trash2, Save, PlusCircle, BookHeart, ChevronDown } from 'lucide-react';
 import { format, addHours, isPast } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -22,6 +22,9 @@ export default function BatchDetails() {
     const [notes, setNotes] = useState('');
     const [toast, setToast] = useState(null);
 
+    const [bottleNotes, setBottleNotes] = useState({});
+    const [expandedBottleId, setExpandedBottleId] = useState(null);
+
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -29,6 +32,14 @@ export default function BatchDetails() {
                 if (data) {
                     setBatch(data);
                     setNotes(data.notes || '');
+                    // Initialize bottle notes
+                    if (data.bottles) {
+                        const bNotes = {};
+                        data.bottles.forEach(b => {
+                            bNotes[b.id] = b.notes || '';
+                        });
+                        setBottleNotes(bNotes);
+                    }
                 } else {
                     navigate('/');
                 }
@@ -50,6 +61,29 @@ export default function BatchDetails() {
     const handleNotesSave = async () => {
         const updated = await update(id, { notes });
         setBatch(updated);
+    };
+
+    const handleBottleRatingChange = async (bottleId, key, value) => {
+        if (!batch.bottles) return;
+        const updatedBottles = batch.bottles.map(b =>
+            b.id === bottleId ? { ...b, [key]: value } : b
+        );
+        const updatedBatch = await update(id, { bottles: updatedBottles });
+        setBatch(updatedBatch);
+    };
+
+    const handleBottleNoteChange = (bottleId, value) => {
+        setBottleNotes(prev => ({ ...prev, [bottleId]: value }));
+    };
+
+    const handleBottleNoteSave = async (bottleId) => {
+        if (!batch.bottles) return;
+        const note = bottleNotes[bottleId];
+        const updatedBottles = batch.bottles.map(b =>
+            b.id === bottleId ? { ...b, notes: note } : b
+        );
+        const updatedBatch = await update(id, { bottles: updatedBottles });
+        setBatch(updatedBatch);
     };
 
     const handleF1Complete = async () => {
@@ -153,16 +187,38 @@ export default function BatchDetails() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                     {batch.bottles ? (
-                        <div className="flex flex-wrap justify-center gap-8 pt-6">
+                        <div className="grid grid-cols-2 justify-items-center gap-4 pt-6">
                             {batch.bottles.map((bottle, idx) => (
-                                <Bottle key={idx} index={idx} className="scale-90" noRotation>
-                                    <div className="w-full flex flex-col gap-1 items-center">
-                                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest border-b border-gray-200 pb-0.5 w-full text-center">
+                                <Bottle key={idx} index={idx} size="sm" noRotation>
+                                    <div className="w-full h-full flex flex-col justify-center items-center">
+                                        <span className="text-[7px] font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100 w-full text-center mb-0.5 shrink-0">
                                             Bouteille {bottle.id}
                                         </span>
-                                        <p className="font-handwriting text-gray-800 text-sm leading-tight text-center break-words w-full" style={{ fontFamily: '"Comic Sans MS", "Chalkboard SE", sans-serif' }}>
-                                            {bottle.ingredients || "Nature"}
-                                        </p>
+                                        <div className="flex-1 flex flex-col items-center justify-center w-full min-h-0 overflow-hidden">
+                                            {Array.isArray(bottle.ingredients) ? (
+                                                <div className="flex flex-col items-center gap-0.5 w-full">
+                                                    {bottle.ingredients.slice(0, 5).map((ing, i) => (
+                                                        <span key={i} className="font-handwriting text-gray-800 text-[9px] leading-3 text-center w-full truncate px-1" style={{ fontFamily: '"Comic Sans MS", "Chalkboard SE", sans-serif' }}>
+                                                            {ing}
+                                                        </span>
+                                                    ))}
+                                                    {bottle.ingredients.length > 5 && (
+                                                        <span className="text-[8px] text-gray-500 leading-none">...</span>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-col items-center gap-0.5 w-full">
+                                                    {(bottle.ingredients || "Nature").toString().split(',').slice(0, 5).map((ing, i) => (
+                                                        <span key={i} className="font-handwriting text-gray-800 text-[9px] leading-3 text-center w-full truncate px-1" style={{ fontFamily: '"Comic Sans MS", "Chalkboard SE", sans-serif' }}>
+                                                            {ing.trim()}
+                                                        </span>
+                                                    ))}
+                                                    {(bottle.ingredients || "").toString().split(',').length > 5 && (
+                                                        <span className="text-[8px] text-gray-500 leading-none">...</span>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </Bottle>
                             ))}
@@ -175,7 +231,8 @@ export default function BatchDetails() {
                                 Start F2 & Add Ingredients
                             </Button>
                         </div>
-                    )}
+                    )
+                    }
                 </CardContent>
             </Card>
 
@@ -219,93 +276,217 @@ export default function BatchDetails() {
                 </CardContent>
             </Card>
 
-            {/* Rating & Notes */}
-            <Card>
-                <CardHeader className="pb-2">
-                    <CardTitle className="text-gray-800 text-base">Résultat</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="space-y-6">
-                        <div className="text-center">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Note Globale</label>
-                            <div className="flex justify-center">
-                                <StarRating rating={batch.rating} onChange={(val) => handleRatingChange('rating', val)} />
+            {/* Rating & Notes System */}
+            {batch.bottles && batch.bottles.length > 0 ? (
+                // *** Per-Bottle Rating System ***
+                <div className="space-y-6">
+                    <h3 className="text-lg font-bold text-gray-800 px-1">Dégustation par Bouteille ({batch.bottles.length})</h3>
+                    {batch.bottles.map((bottle) => {
+                        const isExpanded = expandedBottleId === bottle.id;
+                        return (
+                            <Card key={bottle.id} className="border-l-4 border-l-purple-500 overflow-hidden">
+                                <CardHeader
+                                    className="pb-2 bg-purple-50/30 cursor-pointer hover:bg-purple-50/60 transition-colors"
+                                    onClick={() => setExpandedBottleId(isExpanded ? null : bottle.id)}
+                                >
+                                    <div className="flex justify-between items-center w-full">
+                                        <CardTitle className="text-gray-800 text-base flex items-center gap-2">
+                                            <span>Bouteille {bottle.id}</span>
+                                            {Array.isArray(bottle.ingredients) && bottle.ingredients.length > 0 && (
+                                                <span className="text-xs font-normal bg-purple-100 text-purple-700 py-1 px-2 rounded-full">
+                                                    {bottle.ingredients.join(', ')}
+                                                </span>
+                                            )}
+                                        </CardTitle>
+                                        <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+                                    </div>
+                                    {!isExpanded && (bottle.rating > 0 || bottle.ratingTaste > 0 || bottle.ratingFizz > 0) && (
+                                        <div className="text-xs text-gray-500 mt-1 flex gap-2">
+                                            {bottle.rating > 0 && <span>★ {bottle.rating}/5</span>}
+                                            {bottle.rating > 0 && (bottle.ratingTaste || bottle.ratingFizz) && <span>•</span>}
+                                            {bottle.ratingTaste > 0 && <span>Goût: {bottle.ratingTaste}</span>}
+                                        </div>
+                                    )}
+                                </CardHeader>
+                                {isExpanded && (
+                                    <CardContent className="space-y-4 pt-4 animate-in slide-in-from-top-2 duration-200">
+                                        <div className="space-y-6">
+                                            <div className="text-center">
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Note Globale</label>
+                                                <div className="flex justify-center">
+                                                    <StarRating
+                                                        rating={bottle.rating || 0}
+                                                        onChange={(val) => handleBottleRatingChange(bottle.id, 'rating', val)}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-4 rounded-lg">
+                                                <div>
+                                                    <label className="flex justify-between text-sm font-medium text-gray-700 mb-1">
+                                                        <span>Goût</span>
+                                                        <span className="text-primary font-bold">{bottle.ratingTaste || 5}/10</span>
+                                                    </label>
+                                                    <input
+                                                        type="range" min="1" max="10"
+                                                        value={bottle.ratingTaste || 5}
+                                                        onChange={(e) => handleBottleRatingChange(bottle.id, 'ratingTaste', Number(e.target.value))}
+                                                        className="w-full accent-primary h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <label className="flex justify-between text-sm font-medium text-gray-700 mb-1">
+                                                        <span>Bulles</span>
+                                                        <span className="text-purple-600 font-bold">{bottle.ratingFizz || 5}/10</span>
+                                                    </label>
+                                                    <input
+                                                        type="range" min="1" max="10"
+                                                        value={bottle.ratingFizz || 5}
+                                                        onChange={(e) => handleBottleRatingChange(bottle.id, 'ratingFizz', Number(e.target.value))}
+                                                        className="w-full accent-purple-600 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <label className="flex justify-between text-sm font-medium text-gray-700 mb-1">
+                                                        <span>Sucre ressenti</span>
+                                                        <span className="text-pink-500 font-bold">{bottle.ratingSugar || 5}/10</span>
+                                                    </label>
+                                                    <input
+                                                        type="range" min="1" max="10"
+                                                        value={bottle.ratingSugar || 5}
+                                                        onChange={(e) => handleBottleRatingChange(bottle.id, 'ratingSugar', Number(e.target.value))}
+                                                        className="w-full accent-pink-500 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <label className="flex justify-between text-sm font-medium text-gray-700 mb-1">
+                                                        <span>Acidité</span>
+                                                        <span className="text-amber-500 font-bold">{bottle.ratingAcidity || 5}/10</span>
+                                                    </label>
+                                                    <input
+                                                        type="range" min="1" max="10"
+                                                        value={bottle.ratingAcidity || 5}
+                                                        onChange={(e) => handleBottleRatingChange(bottle.id, 'ratingAcidity', Number(e.target.value))}
+                                                        className="w-full accent-amber-500 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Notes ({Array.isArray(bottle.ingredients) ? bottle.ingredients.join(', ') : (bottle.ingredients || `Bouteille ${bottle.id}`)})</label>
+                                            <textarea
+                                                className="w-full min-h-[100px] p-3 rounded-md border border-gray-300 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                                                placeholder={`Commentaires pour la bouteille ${bottle.id}...`}
+                                                value={bottleNotes[bottle.id] || ''}
+                                                onChange={(e) => handleBottleNoteChange(bottle.id, e.target.value)}
+                                                onBlur={() => handleBottleNoteSave(bottle.id)}
+                                            ></textarea>
+                                            <div className="flex justify-between mt-2">
+                                                <span className="text-xs text-gray-400 italic self-center">Sauvegardé auto. au départ du champ</span>
+                                                <Button onClick={() => handleBottleNoteSave(bottle.id)} size="sm" className="gap-2">
+                                                    <Save className="w-4 h-4" /> Sauvegarder
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                )}
+                            </Card>
+                        );
+                    })}
+                </div>
+            ) : (
+                // *** Legacy Global Rating (Fallback) ***
+                <Card>
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-gray-800 text-base">Résultat</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="space-y-6">
+                            <div className="text-center">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Note Globale</label>
+                                <div className="flex justify-center">
+                                    <StarRating rating={batch.rating} onChange={(val) => handleRatingChange('rating', val)} />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-4 rounded-lg">
+                                <div>
+                                    <label className="flex justify-between text-sm font-medium text-gray-700 mb-1">
+                                        <span>Goût</span>
+                                        <span className="text-primary font-bold">{batch.ratingTaste || 5}/10</span>
+                                    </label>
+                                    <input
+                                        type="range" min="1" max="10"
+                                        value={batch.ratingTaste || 5}
+                                        onChange={(e) => handleRatingChange('ratingTaste', Number(e.target.value))}
+                                        className="w-full accent-primary h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="flex justify-between text-sm font-medium text-gray-700 mb-1">
+                                        <span>Bulles</span>
+                                        <span className="text-purple-600 font-bold">{batch.ratingFizz || 5}/10</span>
+                                    </label>
+                                    <input
+                                        type="range" min="1" max="10"
+                                        value={batch.ratingFizz || 5}
+                                        onChange={(e) => handleRatingChange('ratingFizz', Number(e.target.value))}
+                                        className="w-full accent-purple-600 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="flex justify-between text-sm font-medium text-gray-700 mb-1">
+                                        <span>Sucre ressenti</span>
+                                        <span className="text-pink-500 font-bold">{batch.ratingSugar || 5}/10</span>
+                                    </label>
+                                    <input
+                                        type="range" min="1" max="10"
+                                        value={batch.ratingSugar || 5}
+                                        onChange={(e) => handleRatingChange('ratingSugar', Number(e.target.value))}
+                                        className="w-full accent-pink-500 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="flex justify-between text-sm font-medium text-gray-700 mb-1">
+                                        <span>Acidité</span>
+                                        <span className="text-amber-500 font-bold">{batch.ratingAcidity || 5}/10</span>
+                                    </label>
+                                    <input
+                                        type="range" min="1" max="10"
+                                        value={batch.ratingAcidity || 5}
+                                        onChange={(e) => handleRatingChange('ratingAcidity', Number(e.target.value))}
+                                        className="w-full accent-amber-500 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                                    />
+                                </div>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-4 rounded-lg">
-                            <div>
-                                <label className="flex justify-between text-sm font-medium text-gray-700 mb-1">
-                                    <span>Goût</span>
-                                    <span className="text-primary font-bold">{batch.ratingTaste || 5}/10</span>
-                                </label>
-                                <input
-                                    type="range" min="1" max="10"
-                                    value={batch.ratingTaste || 5}
-                                    onChange={(e) => handleRatingChange('ratingTaste', Number(e.target.value))}
-                                    className="w-full accent-primary h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="flex justify-between text-sm font-medium text-gray-700 mb-1">
-                                    <span>Bulles</span>
-                                    <span className="text-purple-600 font-bold">{batch.ratingFizz || 5}/10</span>
-                                </label>
-                                <input
-                                    type="range" min="1" max="10"
-                                    value={batch.ratingFizz || 5}
-                                    onChange={(e) => handleRatingChange('ratingFizz', Number(e.target.value))}
-                                    className="w-full accent-purple-600 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="flex justify-between text-sm font-medium text-gray-700 mb-1">
-                                    <span>Sucre ressenti</span>
-                                    <span className="text-pink-500 font-bold">{batch.ratingSugar || 5}/10</span>
-                                </label>
-                                <input
-                                    type="range" min="1" max="10"
-                                    value={batch.ratingSugar || 5}
-                                    onChange={(e) => handleRatingChange('ratingSugar', Number(e.target.value))}
-                                    className="w-full accent-pink-500 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="flex justify-between text-sm font-medium text-gray-700 mb-1">
-                                    <span>Acidité</span>
-                                    <span className="text-amber-500 font-bold">{batch.ratingAcidity || 5}/10</span>
-                                </label>
-                                <input
-                                    type="range" min="1" max="10"
-                                    value={batch.ratingAcidity || 5}
-                                    onChange={(e) => handleRatingChange('ratingAcidity', Number(e.target.value))}
-                                    className="w-full accent-amber-500 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                                />
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                            <textarea
+                                className="w-full min-h-[100px] p-3 rounded-md border border-gray-300 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                                placeholder="Comment était le goût ? Pétillant ?..."
+                                value={notes}
+                                onChange={(e) => setNotes(e.target.value)}
+                                onBlur={handleNotesSave}
+                            ></textarea>
+                            <div className="flex justify-between mt-2">
+                                <span className="text-xs text-gray-400 italic self-center">Sauvegardé auto. au départ du champ</span>
+                                <Button onClick={handleNotesSave} size="sm" className="gap-2">
+                                    <Save className="w-4 h-4" /> Sauvegarder
+                                </Button>
                             </div>
                         </div>
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                        <textarea
-                            className="w-full min-h-[100px] p-3 rounded-md border border-gray-300 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                            placeholder="Comment était le goût ? Pétillant ?..."
-                            value={notes}
-                            onChange={(e) => setNotes(e.target.value)}
-                            onBlur={handleNotesSave}
-                        ></textarea>
-                        <div className="flex justify-between mt-2">
-                            <span className="text-xs text-gray-400 italic self-center">Sauvegardé auto. au départ du champ</span>
-                            <Button onClick={handleNotesSave} size="sm" className="gap-2">
-                                <Save className="w-4 h-4" /> Sauvegarder
-                            </Button>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
+                    </CardContent>
+                </Card>
+            )}
 
             <ConfirmDialog
                 isOpen={showDeleteConfirm}
@@ -314,6 +495,7 @@ export default function BatchDetails() {
                 title="Supprimer le lot ?"
                 message="Cette action est irréversible."
             />
+
 
             {toast && (
                 <Toast

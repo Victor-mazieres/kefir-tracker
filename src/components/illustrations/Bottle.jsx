@@ -1,15 +1,25 @@
 import React from 'react';
 import { cn } from '../../lib/utils';
 
-export function Bottle({ children, index, className, noRotation = false }) {
+export function Bottle({ children, index, className, noRotation = false, size = 'md' }) {
     // Generate a slightly different rotation/wobble for each bottle to make it feel organic
     const rotation = noRotation ? 0 : (index % 3 - 1) * 2; // -2, 0, 2 degrees
+
+    const sizeClasses = {
+        sm: "w-32 h-[226px]", // ~66% of md
+        md: "w-48 h-[340px]"
+    };
+
+    const currentSize = sizeClasses[size] || sizeClasses.md;
 
     return (
         <div className={cn("relative flex flex-col items-center group", className)}>
             {/* Bottle SVG */}
             <div
-                className="relative w-48 h-[340px] drop-shadow-xl transition-transform duration-300 group-hover:scale-105"
+                className={cn(
+                    "relative drop-shadow-xl transition-transform duration-300 group-hover:scale-105",
+                    currentSize
+                )}
                 style={{ transform: `rotate(${rotation}deg)` }}
             >
                 <svg viewBox="0 0 100 240" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
@@ -59,17 +69,17 @@ export function Bottle({ children, index, className, noRotation = false }) {
                     <circle cx="30" cy="30" r="2" fill="#4B5563" />
                     <circle cx="70" cy="30" r="2" fill="#4B5563" />
 
-                    {/* Label Area Background */}
-                    <rect x="15" y="130" width="70" height="60" rx="2" fill="#FFFBEB" stroke="#D1D5DB" strokeWidth="0.5" />
+                    {/* Label Area Background - Increased height */}
+                    <rect x="15" y="120" width="70" height="90" rx="2" fill="#FFFBEB" stroke="#D1D5DB" strokeWidth="0.5" />
                 </svg>
 
-                {/* Content Container (Label) */}
-                <div className="absolute top-[185px] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[65%] h-[22%] flex flex-col items-center justify-center p-1 text-center">
+                {/* Content Container (Label) - Increased height */}
+                <div className="absolute top-[68.75%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[65%] h-[37%] flex flex-col items-center justify-center p-0.5 text-center overflow-hidden">
                     {children}
                 </div>
             </div>
 
-            <div className="mt-2 w-32 h-4 bg-black/10 rounded-[100%] blur-md" />
+            <div className={cn("mt-2 bg-black/10 rounded-[100%] blur-md", size === 'sm' ? "w-20 h-3" : "w-32 h-4")} />
         </div>
     );
 }

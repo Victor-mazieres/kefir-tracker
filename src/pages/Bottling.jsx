@@ -11,7 +11,7 @@ export default function Bottling() {
     const navigate = useNavigate();
     const { get, update } = useBatches();
     const [bottleCount, setBottleCount] = useState(1);
-    const [bottles, setBottles] = useState([{ id: 1, ingredients: '' }]);
+    const [bottles, setBottles] = useState([{ id: 1, ingredients: [] }]);
 
     const handleCountChange = (newCount) => {
         if (newCount < 1) return;
@@ -21,7 +21,7 @@ export default function Bottling() {
             if (newCount > prev.length) {
                 const newBottles = [...prev];
                 for (let i = prev.length; i < newCount; i++) {
-                    newBottles.push({ id: i + 1, ingredients: '' });
+                    newBottles.push({ id: i + 1, ingredients: [] });
                 }
                 return newBottles;
             } else {
@@ -30,10 +30,22 @@ export default function Bottling() {
         });
     };
 
-    const handleIngredientChange = (index, value) => {
+    const addIngredient = (index, value) => {
+        if (!value.trim()) return;
         const newBottles = [...bottles];
-        newBottles[index].ingredients = value;
+        if (!Array.isArray(newBottles[index].ingredients)) {
+            newBottles[index].ingredients = [];
+        }
+        newBottles[index].ingredients.push(value.trim());
         setBottles(newBottles);
+    };
+
+    const removeIngredient = (bottleIndex, ingredientIndex) => {
+        const newBottles = [...bottles];
+        if (Array.isArray(newBottles[bottleIndex].ingredients)) {
+            newBottles[bottleIndex].ingredients = newBottles[bottleIndex].ingredients.filter((_, i) => i !== ingredientIndex);
+            setBottles(newBottles);
+        }
     };
 
     const handleSave = async () => {
@@ -103,12 +115,51 @@ export default function Bottling() {
                                 </div>
                                 <div className="flex-1 space-y-2">
                                     <h4 className="text-sm font-bold text-gray-900">Bouteille #{bottle.id}</h4>
-                                    <Input
-                                        placeholder="Ingrédients (ex: Gingembre...)"
-                                        value={bottle.ingredients}
-                                        onChange={(e) => handleIngredientChange(index, e.target.value)}
-                                        className="bg-gray-50/50"
-                                    />
+
+                                    {/* Ingredient List (Tags) */}
+                                    <div className="flex flex-wrap gap-2 mb-2">
+                                        {Array.isArray(bottle.ingredients) && bottle.ingredients.map((ing, i) => (
+                                            <span key={i} className="flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded-full text-xs font-medium">
+                                                {ing}
+                                                <button
+                                                    onClick={() => removeIngredient(index, i)}
+                                                    className="hover:bg-primary/20 rounded-full p-0.5"
+                                                >
+                                                    <Minus className="w-3 h-3" />
+
+                                                </button>
+                                            </span>
+                                        ))}
+                                    </div>
+
+                                    {/* Add Ingredient Input */}
+                                    <div className="flex gap-2">
+                                        <Input
+                                            placeholder="Ajouter un ingrédient..."
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                    addIngredient(index, e.currentTarget.value);
+                                                    e.currentTarget.value = '';
+                                                }
+                                            }}
+                                            className="bg-gray-50/50"
+                                            id={`ing-input-${bottle.id}`}
+                                        />
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            onClick={() => {
+                                                const input = document.getElementById(`ing-input-${bottle.id}`);
+                                                if (input && input.value) {
+                                                    addIngredient(index, input.value);
+                                                    input.value = '';
+                                                }
+                                            }}
+                                        >
+                                            <Plus className="w-4 h-4" />
+                                        </Button>
+                                    </div>
                                 </div>
                             </div>
                         ))}
