@@ -1,89 +1,74 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as db from '../db/indexedDb';
 
 export const useBatches = () => {
-    const [batches, setBatches] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const queryClient = useQueryClient();
 
-    const fetchBatches = useCallback(async () => {
-        try {
-            setLoading(true);
-            const data = await db.listBatches();
-            setBatches(data);
-        } catch (err) {
-            setError(err);
-        } finally {
-            setLoading(false);
+    const { data: batches = [], isLoading: loading, error } = useQuery({
+        queryKey: ['batches'],
+        queryFn: db.listBatches,
+    });
+
+    const addMutation = useMutation({
+        mutationFn: db.addBatch,
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['batches'] })
+    });
+
+    const updateMutation = useMutation({
+        mutationFn: ({ id, patch }) => db.updateBatch(id, patch),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['batches'] })
+    });
+
+    const deleteMutation = useMutation({
+        mutationFn: db.deleteBatch,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['batches'] });
+            queryClient.invalidateQueries({ queryKey: ['batch'] }); // If we had individual batch queries
         }
-    }, []);
+    });
 
-    useEffect(() => {
-        fetchBatches();
-    }, [fetchBatches]);
-
-    const add = useCallback(async (data) => {
-        const newBatch = await db.addBatch(data);
-        await fetchBatches();
-        return newBatch;
-    }, [fetchBatches]);
-
-    const update = useCallback(async (id, patch) => {
-        const updated = await db.updateBatch(id, patch);
-        await fetchBatches();
-        return updated;
-    }, [fetchBatches]);
-
-    const remove = useCallback(async (id) => {
-        await db.deleteBatch(id);
-        await fetchBatches();
-    }, [fetchBatches]);
-
-    const get = useCallback(async (id) => {
-        // This is for fetching a single batch without loading all
-        return await db.getBatch(id);
-    }, []);
-
-    return { batches, loading, error, add, update, remove, get, refresh: fetchBatches };
+    return {
+        batches,
+        loading,
+        error,
+        add: addMutation.mutateAsync,
+        update: (id, patch) => updateMutation.mutateAsync({ id, patch }),
+        remove: deleteMutation.mutateAsync,
+        get: db.getBatch,
+        refresh: () => queryClient.invalidateQueries({ queryKey: ['batches'] })
+    };
 };
 
 export const useRecipes = () => {
-    const [recipes, setRecipes] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const queryClient = useQueryClient();
 
-    const fetchRecipes = useCallback(async () => {
-        try {
-            setLoading(true);
-            const data = await db.listRecipes();
-            setRecipes(data);
-        } catch (err) {
-            setError(err);
-        } finally {
-            setLoading(false);
-        }
-    }, []);
+    const { data: recipes = [], isLoading: loading, error } = useQuery({
+        queryKey: ['recipes'],
+        queryFn: db.listRecipes,
+    });
 
-    useEffect(() => {
-        fetchRecipes();
-    }, [fetchRecipes]);
+    const addMutation = useMutation({
+        mutationFn: db.addRecipe,
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['recipes'] })
+    });
 
-    const add = useCallback(async (data) => {
-        const newRecipe = await db.addRecipe(data);
-        await fetchRecipes();
-        return newRecipe;
-    }, [fetchRecipes]);
+    const updateMutation = useMutation({
+        mutationFn: ({ id, patch }) => db.updateRecipe(id, patch),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['recipes'] })
+    });
 
-    const update = useCallback(async (id, patch) => {
-        const updated = await db.updateRecipe(id, patch);
-        await fetchRecipes();
-        return updated;
-    }, [fetchRecipes]);
+    const deleteMutation = useMutation({
+        mutationFn: db.deleteRecipe,
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['recipes'] })
+    });
 
-    const remove = useCallback(async (id) => {
-        await db.deleteRecipe(id);
-        await fetchRecipes();
-    }, [fetchRecipes]);
-
-    return { recipes, loading, error, add, update, remove, refresh: fetchRecipes };
+    return {
+        recipes,
+        loading,
+        error,
+        add: addMutation.mutateAsync,
+        update: (id, patch) => updateMutation.mutateAsync({ id, patch }),
+        remove: deleteMutation.mutateAsync,
+        refresh: () => queryClient.invalidateQueries({ queryKey: ['recipes'] })
+    };
 };

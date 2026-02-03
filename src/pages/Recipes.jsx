@@ -6,6 +6,7 @@ import { Input } from '../components/ui/Input';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { useNavigate } from 'react-router-dom';
 import { Plus, X, Save } from 'lucide-react';
+import { recipeSchema } from '../lib/schemas';
 
 export default function Recipes() {
     const { recipes, add, update, remove } = useRecipes();
@@ -16,22 +17,25 @@ export default function Recipes() {
 
     const [formData, setFormData] = useState({
         name: '',
-        waterL: 2,
-        sugarG: 60,
-        grainsG: 50,
-        f1Hours: 48,
+        waterL: "2",
+        sugarG: "60",
+        grainsG: "50",
+        f1Hours: "48",
         ingredients: ''
     });
+
+    const [errors, setErrors] = useState({});
 
     const resetForm = () => {
         setFormData({
             name: '',
-            waterL: 2,
-            sugarG: 60,
-            grainsG: 50,
-            f1Hours: 48,
+            waterL: "2",
+            sugarG: "60",
+            grainsG: "50",
+            f1Hours: "48",
             ingredients: ''
         });
+        setErrors({});
         setEditingId(null);
         setIsFormOpen(false);
     }
@@ -39,12 +43,13 @@ export default function Recipes() {
     const handleEdit = (recipe) => {
         setFormData({
             name: recipe.name,
-            waterL: recipe.waterL,
-            sugarG: recipe.sugarG,
-            grainsG: recipe.grainsG,
-            f1Hours: recipe.f1Hours,
+            waterL: String(recipe.waterL),
+            sugarG: String(recipe.sugarG),
+            grainsG: String(recipe.grainsG),
+            f1Hours: String(recipe.f1Hours),
             ingredients: recipe.ingredients || ''
         });
+        setErrors({});
         setEditingId(recipe.id);
         setIsFormOpen(true);
     };
@@ -58,13 +63,31 @@ export default function Recipes() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const data = {
+        setErrors({});
+
+        const rawData = {
             ...formData,
             waterL: Number(formData.waterL),
             sugarG: Number(formData.sugarG),
             grainsG: Number(formData.grainsG),
             f1Hours: Number(formData.f1Hours),
+            sugarUnit: 'g', // Default for simplified recipe form
+            isAmbientTemp: false, // Default
+            temperature: undefined
         };
+
+        const result = recipeSchema.safeParse(rawData);
+
+        if (!result.success) {
+            const formattedErrors = {};
+            result.error.issues.forEach(issue => {
+                formattedErrors[issue.path[0]] = issue.message;
+            });
+            setErrors(formattedErrors);
+            return;
+        }
+
+        const data = result.data;
 
         if (editingId) {
             await update(editingId, data);
@@ -75,22 +98,23 @@ export default function Recipes() {
     };
 
     const handleUseRecipe = (recipe) => {
-        // We can't easily pass state via navigate to a new route in a standard way that persists refresh if not using query params or state.
-        // But NewBatch can read from state location.
-        // Let's modify NewBatch to read location.state later if needed? 
-        // Actually typical pattern is just navigate and let user select, OR pass state.
-        // Simplest: just navigate to new-batch? But user wants to "Select recipe".
-        // Let's pass it in state.
-        navigate('/new-batch', { state: { preselectedRecipeId: recipe.id } }); // Note: Need to handle this in NewBatch if I want auto-select
+        navigate('/new-batch', { state: { preselectedRecipeId: recipe.id } });
     };
 
     return (
-        <div className="space-y-4">
-            <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-gray-800">Mes Recettes ({recipes.length})</h2>
+        <div className="space-y-6 pb-6 pt-2">
+            <div className="flex items-center justify-between px-1">
+                <h2 className="text-xl font-bold text-gray-800 tracking-tight">
+                    Mes Recettes <span className="text-gray-400 text-lg font-normal ml-1">({recipes.length})</span>
+                </h2>
                 {!isFormOpen && (
-                    <Button size="sm" onClick={() => setIsFormOpen(true)} className="gap-1">
-                        <Plus className="w-4 h-4" /> Nouvelle
+                    <Button
+                        size="sm"
+                        onClick={() => setIsFormOpen(true)}
+                        className="gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-200 active:scale-95 transition-all rounded-full px-4"
+                    >
+                        <Plus className="w-4 h-4" />
+                        Nouvelle
                     </Button>
                 )}
             </div>
@@ -108,21 +132,22 @@ export default function Recipes() {
                             label="Nom de la recette"
                             value={formData.name}
                             onChange={e => setFormData({ ...formData, name: e.target.value })}
-                            required
+                            error={errors.name}
                             placeholder="Ex: Kéfir Citron Classique"
                         />
                         <div className="grid grid-cols-2 gap-3">
-                            <Input label="Eau (L)" type="number" step="0.1" value={formData.waterL} onChange={e => setFormData({ ...formData, waterL: e.target.value })} required />
-                            <Input label="Durée F1 (h)" type="number" value={formData.f1Hours} onChange={e => setFormData({ ...formData, f1Hours: e.target.value })} required />
+                            <Input label="Eau (L)" type="number" step="0.1" value={formData.waterL} onChange={e => setFormData({ ...formData, waterL: e.target.value })} error={errors.waterL} />
+                            <Input label="Durée F1 (h)" type="number" value={formData.f1Hours} onChange={e => setFormData({ ...formData, f1Hours: e.target.value })} error={errors.f1Hours} />
                         </div>
                         <div className="grid grid-cols-2 gap-3">
-                            <Input label="Sucre (g)" type="number" value={formData.sugarG} onChange={e => setFormData({ ...formData, sugarG: e.target.value })} required />
-                            <Input label="Grains (g)" type="number" value={formData.grainsG} onChange={e => setFormData({ ...formData, grainsG: e.target.value })} required />
+                            <Input label="Sucre (g)" type="number" value={formData.sugarG} onChange={e => setFormData({ ...formData, sugarG: e.target.value })} error={errors.sugarG} />
+                            <Input label="Grains (g)" type="number" value={formData.grainsG} onChange={e => setFormData({ ...formData, grainsG: e.target.value })} error={errors.grainsG} />
                         </div>
                         <Input
                             label="Ingrédients (défaut)"
                             value={formData.ingredients}
                             onChange={e => setFormData({ ...formData, ingredients: e.target.value })}
+                            error={errors.ingredients}
                             placeholder="Ingrédients par défaut..."
                         />
                         <Button type="submit" className="w-full gap-2">
@@ -132,7 +157,7 @@ export default function Recipes() {
                 </div>
             )}
 
-            <div className="grid gap-3">
+            <div className="grid gap-4">
                 {recipes.map(recipe => (
                     <RecipeCard
                         key={recipe.id}
@@ -143,7 +168,12 @@ export default function Recipes() {
                     />
                 ))}
                 {!isFormOpen && recipes.length === 0 && (
-                    <p className="text-center text-gray-500 py-8 italic">Aucune recette enregistrée.</p>
+                    <div className="text-center py-10 text-gray-500 bg-white rounded-xl border border-dashed border-gray-300">
+                        <p>Aucune recette enregistrée.</p>
+                        <Button variant="link" onClick={() => setIsFormOpen(true)}>
+                            Créer ma première recette
+                        </Button>
+                    </div>
                 )}
             </div>
 

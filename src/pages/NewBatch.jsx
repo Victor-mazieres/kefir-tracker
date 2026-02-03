@@ -6,6 +6,7 @@ import { Input } from '../components/ui/Input';
 import { Card, CardContent } from '../components/ui/Card';
 import { ArrowLeft, ChefHat } from 'lucide-react';
 import { format } from 'date-fns';
+import { batchSchema } from '../lib/schemas';
 
 import { DateTimePicker } from '../components/DateTimePicker';
 
@@ -17,18 +18,20 @@ export default function NewBatch() {
     const [formData, setFormData] = useState({
         title: 'Kéfir citron',
         f1Start: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
-        waterL: 2,
-        sugarG: 60,
+        waterL: "2", // Managed as string for input, converted for submit
+        sugarG: "60",
         sugarUnit: 'g',
-        grainsG: 50,
-        f1Hours: 48,
-        temperature: 20,
+        grainsG: "50",
+        f1Hours: "48",
+        temperature: "20",
         isAmbientTemp: false,
         ingredients: 'Citron, figue'
     });
 
+    const [errors, setErrors] = useState({});
+
     /* New logic for preselecting recipe from navigation state */
-    const { state } = useLocation(); // Need to import useLocation
+    const { state } = useLocation();
 
     useEffect(() => {
         if (state?.preselectedRecipeId && recipes.length > 0) {
@@ -37,11 +40,11 @@ export default function NewBatch() {
                 setFormData(prev => ({
                     ...prev,
                     title: recipe.name || prev.title,
-                    waterL: recipe.waterL,
-                    sugarG: recipe.sugarG,
-                    grainsG: recipe.grainsG,
-                    f1Hours: recipe.f1Hours,
-                    temperature: recipe.temperature || prev.temperature,
+                    waterL: String(recipe.waterL),
+                    sugarG: String(recipe.sugarG),
+                    grainsG: String(recipe.grainsG),
+                    f1Hours: String(recipe.f1Hours),
+                    temperature: recipe.temperature ? String(recipe.temperature) : prev.temperature,
                     isAmbientTemp: recipe.isAmbientTemp || false,
                     ingredients: recipe.ingredients || prev.ingredients
                 }));
@@ -55,6 +58,10 @@ export default function NewBatch() {
             ...prev,
             [name]: type === 'checkbox' ? checked : value
         }));
+        // Clear error when user changes field
+        if (errors[name]) {
+            setErrors(prev => ({ ...prev, [name]: null }));
+        }
     };
 
     const handleRecipeSelect = (e) => {
@@ -65,30 +72,47 @@ export default function NewBatch() {
             setFormData(prev => ({
                 ...prev,
                 title: recipe.name || prev.title,
-                waterL: recipe.waterL,
-                sugarG: recipe.sugarG,
-                grainsG: recipe.grainsG,
-                f1Hours: recipe.f1Hours,
-                temperature: recipe.temperature || prev.temperature,
+                waterL: String(recipe.waterL),
+                sugarG: String(recipe.sugarG),
+                grainsG: String(recipe.grainsG),
+                f1Hours: String(recipe.f1Hours),
+                temperature: recipe.temperature ? String(recipe.temperature) : prev.temperature,
                 isAmbientTemp: recipe.isAmbientTemp || false,
                 ingredients: recipe.ingredients || prev.ingredients
             }));
+            setErrors({});
         }
     }
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setErrors({});
+
+        // Convert to numbers for validation
+        const rawData = {
+            ...formData,
+            waterL: Number(formData.waterL),
+            sugarG: Number(formData.sugarG),
+            grainsG: Number(formData.grainsG),
+            f1Hours: Number(formData.f1Hours),
+            temperature: formData.temperature ? Number(formData.temperature) : undefined,
+        };
+
+        const result = batchSchema.safeParse(rawData);
+
+        if (!result.success) {
+            const formattedErrors = {};
+            result.error.issues.forEach(issue => {
+                formattedErrors[issue.path[0]] = issue.message;
+            });
+            setErrors(formattedErrors);
+            return;
+        }
+
         try {
             const batch = await addBatch({
-                ...formData,
+                ...result.data,
                 f1Start: new Date(formData.f1Start).toISOString(),
-                waterL: Number(formData.waterL),
-                sugarG: Number(formData.sugarG),
-                sugarUnit: formData.sugarUnit,
-                grainsG: Number(formData.grainsG),
-                f1Hours: Number(formData.f1Hours),
-                temperature: Number(formData.temperature),
-                isAmbientTemp: formData.isAmbientTemp,
                 rating: 0,
                 notes: '',
                 f1DoneAt: null
@@ -135,7 +159,7 @@ export default function NewBatch() {
                             name="title"
                             value={formData.title}
                             onChange={handleChange}
-                            required
+                            error={errors.title}
                         />
 
                         <DateTimePicker
@@ -143,6 +167,7 @@ export default function NewBatch() {
                             name="f1Start"
                             value={formData.f1Start}
                             onChange={handleChange}
+                            error={errors.f1Start}
                         />
 
                         {/* Row 1: Water & Time */}
@@ -154,7 +179,7 @@ export default function NewBatch() {
                                 name="waterL"
                                 value={formData.waterL}
                                 onChange={handleChange}
-                                required
+                                error={errors.waterL}
                             />
                             <Input
                                 label="Durée F1 (h)"
@@ -162,7 +187,7 @@ export default function NewBatch() {
                                 name="f1Hours"
                                 value={formData.f1Hours}
                                 onChange={handleChange}
-                                required
+                                error={errors.f1Hours}
                             />
                         </div>
 
@@ -176,9 +201,9 @@ export default function NewBatch() {
                                         name="sugarG"
                                         value={formData.sugarG}
                                         onChange={handleChange}
-                                        required
                                         className="flex-1"
                                         placeholder="Qté"
+                                        error={errors.sugarG}
                                     />
                                     <select
                                         name="sugarUnit"
@@ -198,7 +223,7 @@ export default function NewBatch() {
                                 name="grainsG"
                                 value={formData.grainsG}
                                 onChange={handleChange}
-                                required
+                                error={errors.grainsG}
                             />
                         </div>
 
@@ -211,6 +236,7 @@ export default function NewBatch() {
                                 name="temperature"
                                 value={formData.temperature}
                                 onChange={handleChange}
+                                error={errors.temperature}
                             />
                             <div className="flex items-center gap-2 h-12 pb-2">
                                 <input
@@ -233,6 +259,7 @@ export default function NewBatch() {
                             value={formData.ingredients}
                             onChange={handleChange}
                             placeholder="Ex: Citron, figue, dattes..."
+                            error={errors.ingredients}
                         />
 
                         <div className="pt-4">

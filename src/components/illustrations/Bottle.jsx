@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '../../lib/utils';
 
-export function Bottle({ children, index, className, noRotation = false, size = 'md' }) {
+export function Bottle({ children, index, className, noRotation = false, size = 'md', color }) {
     // Generate a slightly different rotation/wobble for each bottle to make it feel organic
     const rotation = noRotation ? 0 : (index % 3 - 1) * 2; // -2, 0, 2 degrees
 
@@ -47,7 +47,7 @@ export function Bottle({ children, index, className, noRotation = false, size = 
                     {/* Liquid Level */}
                     <path
                         d="M12,120 Q50,115 88,120 V215 Q88,230 75,230 H25 Q12,230 12,215 Z"
-                        fill="#FDE68A"
+                        fill={color || "#FDE68A"}
                         opacity="0.6"
                     />
                     {/* Bubbles */}

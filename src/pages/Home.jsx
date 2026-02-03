@@ -39,13 +39,13 @@ export default function Home() {
     }, [batches, searchTerm, sortBy]);
 
     return (
-        <div className="space-y-4">
-            <div className="flex items-center gap-2">
+        <div className="space-y-6 pb-6">
+            <div className="flex items-center gap-3 pt-2">
                 <div className="relative flex-1">
                     <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                     <Input
-                        placeholder="Rechercher..."
-                        className="pl-9 h-10"
+                        placeholder="Rechercher un lot, un ingrédient..."
+                        className="pl-9 h-10 bg-white border-gray-200 focus:border-indigo-300 focus:ring-indigo-100 transition-all"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -54,17 +54,22 @@ export default function Home() {
                     variant="secondary"
                     size="icon"
                     onClick={() => setSortBy(prev => prev === 'date' ? 'rating' : 'date')}
-                    className={sortBy === 'rating' ? "bg-secondary/20 border-secondary text-primary" : ""}
+                    className={`transition-all duration-200 border ${sortBy === 'rating' ? "bg-indigo-50 border-indigo-200 text-indigo-600 shadow-sm" : "bg-white border-gray-200 text-gray-500"}`}
+                    title={sortBy === 'rating' ? "Trier par date" : "Trier par note"}
                 >
                     <ArrowUpDown className="h-4 w-4" />
                 </Button>
             </div>
 
-            <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-gray-800">
-                    Historique ({filteredBatches.length})
+            <div className="flex items-center justify-between px-1">
+                <h2 className="text-xl font-bold text-gray-800 tracking-tight">
+                    Historique <span className="text-gray-400 text-lg font-normal ml-1">({filteredBatches.length})</span>
                 </h2>
-                <Button onClick={() => navigate('/new-batch')} size="sm" className="gap-1">
+                <Button
+                    onClick={() => navigate('/new-batch')}
+                    size="sm"
+                    className="gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-200 active:scale-95 transition-all rounded-full px-4"
+                >
                     <Plus className="w-4 h-4" />
                     Nouveau
                 </Button>
@@ -82,7 +87,7 @@ export default function Home() {
                     </Button>
                 </div>
             ) : (
-                <div className="grid gap-3">
+                <div className="grid gap-4">
                     {filteredBatches.map(batch => (
                         <BatchCard key={batch.id} batch={batch} />
                     ))}
